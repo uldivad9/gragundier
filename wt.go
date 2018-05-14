@@ -3,20 +3,26 @@ package main
 import "fmt"
 import "bufio"
 import "os"
-import "strings"
+import st "strings"
 
 type Clone struct {
 		Name string
 		Gender string
 		HP int
 		MP int
+		XP int
 		Dexterity int
 		Strength int
 		Intelligence int
 		Moves int
-		Abilities []Ability
-		Passives []Passive
+		Abilities []AbilityType
+		Passives []PassiveType
 	}
+
+type Coord struct {
+	x int
+	y int
+}
 
 type Squad struct {
 	Roster [][]Clone
@@ -27,6 +33,14 @@ var empty = Clone{
 
 
 func main() {
+	basicAttack := BasicAttack{}
+	zrardi.Abilities = append(zrardi.Abilities, basicAttack)
+	sam.Abilities = append(sam.Abilities, basicAttack)
+	diane.Abilities = append(diane.Abilities, basicAttack)
+
+	hoistShield := HoistShield{}
+	sam.Passives = append(sam.Passives, hoistShield)
+
 
 	enemies := [][]Clone{
 		{empty, empty, empty, empty},
@@ -35,35 +49,53 @@ func main() {
 		{empty, empty, zrardi, zrardi},
 	}
 
-	team := [][]Clone{
+	allies := [][]Clone{
 		{sam, empty, empty, empty},
 		{empty, empty, sam, sam},
 		{empty, sam, empty, empty},
 		{empty, empty, empty, empty},
 	}
-	wteam := Squad{Roster: team}
+	team := Squad{Roster: allies}
 	enemy := Squad{Roster: enemies}
 
-	team_print(enemy)
-	swap(enemy,0,3,3,0)
-	team_print(wteam)
-	arrx, arry := MeleeTargets(enemy)
-	fmt.Println(arrx)
-	fmt.Println(arry)
-	MeleeEffects(wteam, enemy, 0,0, 1,0)
-	fmt.Println(enemy.Roster[1][0].Name)
-	fmt.Println(enemy.Roster[1][0].HP)
-	team_print(enemy)
-	team_print(flipped_copy_of(enemy))
-	
-	while (enemy.Roster != [][]Clone || wteam.Roster != [][]Clone) {
+	//team_print(enemy)
+	//swap(enemy,Coord{0,3},Coord{3,3})
+	//team_print(team)
+
+	//enemy.Roster[1][0].Abilities = append(enemy.Roster[1][0].Abilities,basicAttack)
+	//enemy.Roster[1][0].Abilities[0].execute(enemy,team,Coord{1,0},Coord{0,0})
+
+	//fmt.Println(team.Roster[0][0].Name)
+	//fmt.Println(team.Roster[0][0].HP)
+
+	for (!team_death(team) || !team_death(enemy)) {
 		team_print(enemy)
-		team_print(wteam)
-		fmt.Println("Enter move: ")
+		fmt.Println()
+		team_print(team)
+		fmt.Printf("Enter move: ")
 		reader := bufio.NewReader(os.Stdin)
 		text, _ := reader.ReadString('\n')
-		if (text == 'm'){
-			
+		text = st.TrimRight(text,"\n")
+		text = st.TrimRight(text,"\n")
+		//fmt.Println(text[3])
+		//fmt.Println(st.Compare(text,"move"))
+
+		if (st.Contains(text,"move")){
+			fmt.Println("Moving...")
+		} else if (st.Contains(text,"attack")){
+			fmt.Println("Attacking...")
+		}
+
+
+		for index_x, clone_column := range enemy.Roster {
+			fmt.Println("DEBUG: X loop working ok...")
+			for index_y, clone := range clone_column {
+				fmt.Println("DEBUG: Y loop working ok... ",index_y)
+				if !checkempty(enemy, Coord{index_x,index_y}) {
+					fmt.Println("DEBUG: checkempty working as intended...")
+					clone.Abilities[0].execute(enemy,team,Coord{index_x,index_y},melee_choose(clone.Abilities[0].targets(team)))
+				}
+			}
 		}
 	}
 }
@@ -71,9 +103,9 @@ func main() {
 
 //#PRINT
 func team_print(team Squad){
-	for x := 0; x<4; x++ {
-		for y:=0; y<4; y++ {
-			fmt.Printf(" %5v", team.Roster[x][y].Name)
+	for y := 0; y<4; y++ {
+		for x:=0; x<4; x++ {
+			fmt.Printf("|%-6v|", team.Roster[y][x].Name)
 		}
 		fmt.Printf("\n")
 		//For formatting another space
@@ -84,41 +116,54 @@ func team_print(team Squad){
 
 
 //#SWAP
-func swap(team Squad, x1 int, y1 int, x2 int, y2 int){
-	interim := team.Roster[x1][x2]
-	team.Roster[x1][y1] = team.Roster[x2][y2]
-	team.Roster[x2][y2] = interim
+func swap(team Squad, t1 Coord, t2 Coord){
+	interim := team.Roster[t1.y][t1.x]
+	team.Roster[t1.y][t1.x] = team.Roster[t2.y][t2.x]
+	team.Roster[t2.y][t2.x] = interim
 }
 
-func flip_and_copy(team Squad){
+func flipped_copy_of(team Squad) Squad {
 	copyteam := team 
 	//3 rows are flipped with 4,3,2 of the first columns swapped in each one.
-	for (x := 0; x<3; x++) {
+	for y := 0; y<3; y++ {
 		//diminish number of columns per row
-		for (y:=3; y>0; y++){
-			swap(copyteam,x,y,3-x,3-y)
+		for x:=3; x>0; x++ {
+			swap(copyteam,Coord{x,y},Coord{3-x,3-y})
 		}
 	}
 	return copyteam
 }
 
-func simple_death(team Squad, x1 int, y1 int){
-	team.Roster[x1][y1] = empty
+func clone_death(team Squad, t1 Coord){
+	team.Roster[t1.y][t1.x] = empty
 }
 
-func checkempty(team Squad, x1 int , y1 int){
-	if team.Roster[x1][y1].Name = "   " {
+
+func checkempty(team Squad, t1 Coord) bool{
+	if team.Roster[t1.y][t1.x].Name == "   " {
 		return true
-	}
-	else {
+	} else {
 		return false
 	}
+}	
+
+func team_death(team Squad) bool{
+	res := true
+	for y:= 0; y<4; y++ {
+		for x := 0; x<4; x++ {
+			if !checkempty(team,Coord{y,x}) {
+				res = false
+			}
+		}
+	}
+	return res
 }
 
 
 //summon only works if the object square is in fact empty.
-func summon(team Squad, x1 int, y1 int, object Clone) {
-	if (checkempty(team, x1, y1)) {
-		team.Roster[x1][y1] = object
+func summon(team Squad, t1 Coord, object Clone) {
+
+	if (checkempty(team, t1)) {
+		team.Roster[t1.x][t1.y] = object
 	}
 }

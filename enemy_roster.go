@@ -9,7 +9,7 @@ var zrardi = Clone{
 	Strength: 20,
 	Intelligence: 10,
 	Moves: 2,
-	Abilities: []Ability{Melee},
-	Passives: []Passive{Frenzy},
+	Abilities: []AbilityType{},
+	Passives: []PassiveType{},
 }
 

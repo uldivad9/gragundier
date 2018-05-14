@@ -9,12 +9,14 @@ var sam = Clone {
 	Strength: 20,
 	Intelligence: 10,
 	Moves: 0,
-	Abilities: []Ability{BasicAttack},
-	Passives: []Passive{HoistShield},
+	Abilities: []AbilityType{
+
+		},
+	Passives: []PassiveType{},
 }
 
 var diane = Clone {
-	Namae: "Diane",
+	Name: "Diane",
 	Gender: "Female",
 	HP: 40,
 	MP: 40,
@@ -22,7 +24,7 @@ var diane = Clone {
 	Strength: 10,
 	Intelligence: 10,
 	Moves: 0,
-	Abilities: []Ability{BasicAttack},
-	Passives: []Passive{},
+	Abilities: []AbilityType{},
+	Passives: []PassiveType{},
 }
 

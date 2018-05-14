@@ -14,3 +14,16 @@ package main
 //Abilities occur in order of command.  Once all moves are committed, the other side does their moves back and forth until the win condition is met
 //win_condition check happens after every action.
 
+var dead_team = [][]Clone {
+	{empty, empty, empty, empty},
+	{empty, empty, empty, empty},
+	{empty, empty, empty, empty},
+	{empty, empty, empty, empty},
+}
+
+var level1 = [][]Clone {
+	{zrardi, zrardi, zrardi, zrardi},
+	{zrardi, empty, empty, empty},
+	{empty, empty, empty, empty},
+	{empty, empty, empty, empty},
+}
